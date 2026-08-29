@@ -160,7 +160,10 @@ describe("createNodeSpawner (real node child processes)", () => {
 
   it("resolves spawnFailed with code ENOENT for a missing binary", async () => {
     const spawner = createNodeSpawner();
-    const child = spawner("definitely-not-a-real-binary-opencode-panel", ["serve"], {
+    // .exe suffix keeps this on the direct-spawn path on Windows (bare names
+    // route through cmd.exe — see spawnNeedsShell — where a missing binary is
+    // reported by the shell's exit code instead of the spawn 'error' event).
+    const child = spawner("definitely-not-a-real-binary-opencode-panel.exe", ["serve"], {
       cwd: undefined,
       env: {},
     });
