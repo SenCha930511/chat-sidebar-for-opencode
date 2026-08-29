@@ -55,17 +55,21 @@ export function SessionsPanel(): ReactNode {
     return attachNewSessionCommand(store.messenger, store);
   }, [store]);
 
-  useEffect(
-    () =>
-      store.activeSession.subscribe((id) => {
-        if (id === null) {
-          clearActiveSession();
-        } else {
-          setActiveSession(id);
-        }
-      }),
-    [store],
-  );
+  useEffect(() => {
+    const syncActiveSession = (id: string | null): void => {
+      if (id === null) {
+        clearActiveSession();
+      } else {
+        setActiveSession(id);
+      }
+    };
+
+    const unsubscribe = store.activeSession.subscribe(syncActiveSession);
+
+    syncActiveSession(store.activeSession.current());
+
+    return unsubscribe;
+  }, [store]);
 
   let appState: ReturnType<typeof useApp> | null = null;
   try {

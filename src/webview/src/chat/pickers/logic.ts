@@ -12,7 +12,18 @@
  */
 
 import type { AgentEntry, CommandEntry, ProviderEntry } from "./constants.js";
+export const INTERNAL_AGENT_NAMES = [
+  "compaction",
+  "title",
+  "summary",
+] as const;
 
+export function isInternalAgent(name: string | undefined): boolean {
+  return (
+    name !== undefined &&
+    (INTERNAL_AGENT_NAMES as readonly string[]).includes(name)
+  );
+}
 /** First-party agent names (mirror of the server-side core set — see header). */
 export const CORE_AGENT_NAMES = [
   "build",

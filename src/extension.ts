@@ -135,10 +135,7 @@ export function activate(
   // shipped with unit tests but were never composed here — sendPrompt from a
   // real webview hit UnknownMessageTypeError. Register both on the same
   // manager-backed source the sessions domain uses.
-  registerPromptHandlers(panel.registerHandler, {
-    source: managerSessionSource(manager),
-    logger,
-  });
+
   registerAnswerHandlers(panel.registerHandler, {
     service: createAnswerService({ source: managerSessionSource(manager), logger }),
   });
@@ -234,6 +231,17 @@ export function activate(
   const dockInvalidation = sessionsDomain.hub.add(dockSync.invalidate);
   const messageInvalidation = sessionsDomain.hub.add(messageSync.invalidate);
   registerMessageSyncHandlers(panel.registerHandler, messageSync, dockSync, capabilityInfo.sync);
+  registerPromptHandlers(panel.registerHandler, {
+    source: managerSessionSource(manager),
+    logger,
+
+    refreshMessages: (sessionId) => {
+      if (messageSync.activeSession === sessionId) {
+        void messageSync.refresh(sessionId);
+      }
+    },
+  });
+    
   const dockCapabilityReset = manager.onDidChangeState((state) => {
     if (state.kind === "managed" || state.kind === "attached") dockSync.reset();
   });

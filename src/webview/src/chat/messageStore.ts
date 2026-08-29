@@ -93,7 +93,60 @@ export class MessageStore {
   private readonly revertedMessageIds = new Map<string, string>();
   /** Exact-one shot request from the UI that the NEXT publish scrolls to the newest user message. */
   private userScrollRequested = false;
+  private hasCompletedFinalAssistant(): boolean {
+    if (this.messages.length === 0) return false;
 
+    const latest = this.messages[this.messages.length - 1];
+
+    if (latest === undefined || latest.role !== "assistant") {
+      return false;
+    }
+
+    const info = latest.info;
+
+    if (
+      typeof info !== "object" ||
+      info === null
+    ) {
+      return false;
+    }
+
+    const record = info as Record<string, unknown>;
+
+    // 非常重要：
+    // OpenCode compaction agent 的輸出不是正常 assistant reply。
+    // 不可以用它來判斷整個 Build turn 已完成。
+    if (
+      record.summary === true ||
+      record.mode === "compaction" ||
+      record.agent === "compaction"
+    ) {
+      return false;
+    }
+
+    const time = record.time;
+
+    if (
+      typeof time !== "object" ||
+      time === null
+    ) {
+      return false;
+    }
+
+    const completed =
+      (time as Record<string, unknown>).completed;
+
+    if (typeof completed !== "number") {
+      return false;
+    }
+
+    // Tool-call 中間階段也不是整輪完成。
+    if (record.finish === "tool-calls") {
+      return false;
+    }
+
+    return true;
+  }
   /** Called by the composer only when the user actually hit send. */
   markUserSent(): void {
     this.userScrollRequested = true;
@@ -174,16 +227,14 @@ export class MessageStore {
 
   /** `messages.sync` full payload: verbatim replacement + tail reconciliation. */
   applyFullSync(sessionId: string, payload: unknown): void {
-    // Explicit-selection contract: only the SESSION THE USER PICKED renders.
-    // A sync for any other session on the shared server (TUI, curl probes,
-    // second client) must not hijack the visible conversation (regression:
-    // a foreign full sync re-bound the store mid-view). Unbound stores bind
-    // the first sync they see; a bound store drops cross-session syncs.
     if (this.sessionId !== undefined && sessionId !== this.sessionId) return;
+
     this.setSession(sessionId);
+
     this.messages = parseMessageList(payload).map((message) => {
       return this.reconcileMessage(message);
     });
+
     this.placeholderPartIds.clear();
     this.pruneTails(this.messages);
     this.publish();
@@ -215,6 +266,9 @@ export class MessageStore {
     }
     this.messages = messages;
     this.pruneTails(messages);
+    if (this.hasCompletedFinalAssistant()) {
+      this.status = "idle";
+    }
     this.publish();
   }
 

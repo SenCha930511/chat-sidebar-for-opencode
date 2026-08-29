@@ -34,9 +34,8 @@ import type { MessageStore } from "../messageStore.js";
 import type { MessageVM } from "../types.js";
 import type { AgentEntry, ProviderEntry } from "./constants.js";
 import { attachCapabilityStore, useCapabilitySnapshot } from "./capabilityStore.js";
-import { agentRows, isCustomAgent, resolveInitialModel } from "./logic.js";
+import { agentRows, isCustomAgent, isInternalAgent, resolveInitialModel } from "./logic.js";
 import { PickerDropdown, type PickerGroup, type PickerRow } from "./pickerDropdown.js";
-
 export function extractSessionAgentAndModel(
   messages: readonly MessageVM[] | undefined,
 ): { agent?: string; model?: string } {
@@ -45,10 +44,25 @@ export function extractSessionAgentAndModel(
   let model: string | undefined;
 
   for (let i = messages.length - 1; i >= 0; i--) {
+    
     const msg = messages[i];
     if (!msg || !msg.info) continue;
     const info = msg.info;
+    const messageAgent =
+      typeof info.agent === "string"
+        ? info.agent
+        : typeof info.agentID === "string"
+          ? info.agentID
+          : typeof info.mode === "string"
+            ? info.mode
+            : undefined;
 
+    if (
+      info.summary === true ||
+      isInternalAgent(messageAgent)
+    ) {
+      continue;
+    }
     if (!agent) {
       if (typeof info.agent === "string" && info.agent.length > 0) {
         agent = info.agent;
@@ -275,6 +289,9 @@ export function ChatPickers(props?: ChatPickersProps): ReactNode {
   );
 
   if (snapshot === undefined) return null;
+  const selectableAgents = snapshot.agents.filter(
+    (agent) => !isInternalAgent(agent.name),
+  );
   const showAgent = snapshot.agents.length > 0;
   const showModel = snapshot.providers.some((provider) => provider.models.length > 0);
   if (!showAgent && !showModel) return null;
