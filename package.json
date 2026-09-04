@@ -2,7 +2,7 @@
   "name": "chat-sidebar-for-opencode",
   "displayName": "Chat Sidebar for OpenCode",
   "description": "OpenCode chat sidebar GUI for VS Code — multi-session streaming, approvals, slash commands, @-mentions and native diffs.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "SenCha930511",
   "license": "MIT",
   "icon": "icon.png",

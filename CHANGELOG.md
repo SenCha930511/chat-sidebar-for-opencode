@@ -3,6 +3,22 @@
 All notable changes to **Chat Sidebar for OpenCode** are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.4] — 2026-09-04
+
+### Fixed
+
+- Fixed managed server startup on Windows: the default `opencode` binaryPath
+  resolves to the npm `.cmd` shim, which Node can no longer spawn without a
+  shell since the Node 18.20.2 / 20.12.2 batch-file hardening, so the managed
+  server never started and every Server start/stop/restart button silently did
+  nothing. Non-`.exe` binaries on Windows are now spawned through a shell.
+- Fixed history conversations staying stale after re-sending a prompt: the
+  composer kept looking busy and neither the new user message nor the streamed
+  reply rendered. The message list now refreshes immediately after a prompt is
+  dispatched, with a short-lived fallback refresh while the stream catches up,
+  and a completed non-compaction assistant message settles the status back to
+  idle.
+
 ## [1.0.3] — 2026-08-22
 
 ### Changed

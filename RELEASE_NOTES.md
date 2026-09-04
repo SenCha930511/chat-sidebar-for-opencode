@@ -1,23 +1,31 @@
-# Chat Sidebar for OpenCode 1.0.3
+# Chat Sidebar for OpenCode 1.0.4
 
-Patch release now live on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=SenCha930511.chat-sidebar-for-opencode) as **v1.0.3** — metadata-only update; no functional changes from 1.0.2.
+Patch release with two bug fixes.
 
 ## What's changed
 
-- **Marketplace listing overhaul** — the extension description now leads with the
-  OpenCode keyword, the tag set is expanded (`opencode`, `oh-my-opencode`,
-  `ai-coding`, `chat-sidebar`, `vscode-extension`, …), and the Marketplace page
-  header now uses the project banner color for a consistent brand look.
-- **GitHub discoverability** — repository topics, description, homepage link,
-  and a refreshed social preview banner.
+- **Windows: managed server actually starts** — the default `opencode`
+  binaryPath resolves to the npm `.cmd` shim, which Node can no longer spawn
+  without a shell since the Node 18.20.2 / 20.12.2 batch-file hardening. The
+  managed server never started and every Server start/stop/restart button
+  silently did nothing. Non-`.exe` binaries on Windows are now spawned through
+  a shell, so default settings work out of the box.
+- **History conversations stay interactive** — re-sending a prompt in a
+  resumed/history session stored the message on the server but the webview
+  stayed stale: the composer kept looking busy and neither the new user
+  message nor the streamed reply rendered. The message list now refreshes
+  immediately after dispatch, with a short-lived fallback refresh while the
+  stream catches up.
 
 ## Install / upgrade
 
-- Extension auto-updates work as usual — or search "Chat Sidebar for OpenCode" in the Extensions view and click **Update**.
-- Or grab `chat-sidebar-for-opencode-1.0.3.vsix` below and run `code --install-extension chat-sidebar-for-opencode-1.0.3.vsix`.
+- Grab `chat-sidebar-for-opencode-1.0.4.vsix` below and run `code --install-extension chat-sidebar-for-opencode-1.0.4.vsix`.
+- Or search "Chat Sidebar for OpenCode" in the Extensions view on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=SenCha930511.chat-sidebar-for-opencode).
 
 ## Previous releases
 
+- **1.0.3** overhauled the Marketplace listing metadata and GitHub
+  discoverability; no functional changes.
 - **1.0.2** fixed the chat list bottom anchoring so newly submitted messages
   scroll correctly, and replaced the retired shields.io Marketplace badge.
 - **1.0.1** renamed the project and extension identity to **Chat Sidebar for
