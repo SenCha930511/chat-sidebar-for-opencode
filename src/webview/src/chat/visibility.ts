@@ -68,11 +68,36 @@ function isHiddenPart(part: PartVM, role: string): boolean {
  * visible remains (messages with zero parts to begin with are kept — the
  * list shows their tool/unknown cards, never an invented empty bubble).
  */
-export function stripHiddenParts(message: MessageVM): MessageVM | undefined {
+export function stripHiddenParts(
+  message: MessageVM,
+): MessageVM | undefined {
+
+  // OpenCode internal compaction output.
+  // It is context-management data, not a user-visible assistant reply.
+  const info = message.info as Record<string, unknown>;
+
+  if (
+    message.role === "assistant" &&
+    (
+      info.summary === true ||
+      info.mode === "compaction" ||
+      info.agent === "compaction"
+    )
+  ) {
+    return undefined;
+  }
+
   if (message.parts.length === 0) return message;
-  const parts = message.parts.filter((part) => !isHiddenPart(part, message.role));
+
+  const parts = message.parts.filter(
+    (part) => !isHiddenPart(part, message.role),
+  );
+
   if (parts.length === 0) return undefined;
-  return parts.length === message.parts.length ? message : { ...message, parts };
+
+  return parts.length === message.parts.length
+    ? message
+    : { ...message, parts };
 }
 
 /** Injection-filtered list, then the optional revert cut (marker included). */

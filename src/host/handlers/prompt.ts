@@ -57,16 +57,36 @@ function errorDetail(error: unknown): string {
 export interface PromptDomainDeps {
   readonly source: SessionClientSource;
   readonly logger: PanelLogger;
+  readonly refreshMessages?: (sessionId: string) => void;
 }
 
+function scheduleFallbackRefreshes(
+  sessionId: string,
+  refreshMessages: ((sessionId: string) => void) | undefined,
+): void {
+  if (refreshMessages === undefined) return;
+
+  refreshMessages(sessionId);
+
+  let elapsed = 0;
+
+  const timer = setInterval(() => {
+    elapsed += 1000;
+
+    refreshMessages(sessionId);
+
+    if (elapsed >= 120_000) {
+      clearInterval(timer);
+    }
+  }, 1000);
+}
 /**
  * Register the two prompt-domain handlers. Each connect()s per request so a
  * dropped server reconnects through the todo-8 onboard path exactly like the
  * sessions domain does.
  */
 export function registerPromptHandlers(register: RegisterHandler, deps: PromptDomainDeps): void {
-  const { source, logger } = deps;
-
+const { source, logger, refreshMessages } = deps;
   register("sendPrompt", async (payload): Promise<FromWebviewResponse["sendPrompt"]> => {
     const connection = await source.connect();
     const result = await dispatchPrompt(payload, {
@@ -79,6 +99,12 @@ export function registerPromptHandlers(register: RegisterHandler, deps: PromptDo
       throw new PromptDispatchError("sendPrompt", result.error);
     }
     logger.debug(`prompt domain: sendPrompt dispatched via ${result.route}`);
+
+    scheduleFallbackRefreshes(
+      payload.sessionId,
+      refreshMessages,
+    );
+
     return null;
   });
 
