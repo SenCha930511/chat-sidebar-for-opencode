@@ -33,6 +33,7 @@ import {
   type ChildSpawner,
   type SpawnError,
 } from "../server/serverManager.js";
+import { spawnNeedsShell } from "./spawnShell.js";
 
 /**
  * Typed config accessor backed by `workspace.getConfiguration("opencodeChatSidebar")`
@@ -103,6 +104,9 @@ export function createNodeSpawner(): ChildSpawner {
     const child = spawn(command, [...args], {
       ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
       env: options.env,
+      // Windows: bare names / npm .cmd shims cannot be spawned directly
+      // (EINVAL on modern Node) — route them through cmd.exe instead.
+      ...(spawnNeedsShell(command) ? { shell: true } : {}),
       stdio: ["ignore", "pipe", "pipe"],
     });
     const stdoutListeners = new Set<(chunk: string) => void>();
